@@ -417,6 +417,7 @@
   music.volume = 0.5;
   let isPlaying = false;
   let userToggled = false;
+  let playAttempted = false; // guards against overlapping play() calls
 
   function setPlayingUI(playing){
     isPlaying = playing;
@@ -425,14 +426,20 @@
   }
 
   function tryAutoPlay(){
-    if(isPlaying || userToggled) return;
+    // Synchronous guard: blocks a second call from firing before the
+    // first play() promise has resolved (this was causing the stutter,
+    // e.g. touchstart and click both firing for the same tap).
+    if(isPlaying || userToggled || playAttempted) return;
+    playAttempted = true;
+
     const playPromise = music.play();
     if(playPromise !== undefined){
       playPromise.then(() => {
         setPlayingUI(true);
       }).catch(() => {
-        // Browser blocked autoplay with sound — will retry on first
-        // scroll, touch, or click below, which counts as user interaction.
+        // Browser blocked autoplay with sound — allow another attempt
+        // on the next interaction.
+        playAttempted = false;
       });
     }
   }
@@ -449,11 +456,16 @@
 
   music.addEventListener('play', () => setPlayingUI(true));
   music.addEventListener('pause', () => setPlayingUI(false));
+  music.addEventListener('waiting', () => {
+    // Buffering — common on a large file over a slow connection.
+    // Not an error, just means more of the file needs to download.
+  });
 
   btn.addEventListener('click', () => {
     userToggled = true;
+    playAttempted = true;
     if(music.paused){
-      music.play().catch(() => {});
+      music.play().catch(() => { playAttempted = false; });
     } else {
       music.pause();
     }
