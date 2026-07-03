@@ -20,7 +20,7 @@
 
   *{margin:0;padding:0;box-sizing:border-box;}
 
-  html{scroll-behavior:smooth;}
+  html{scroll-behavior:auto;}
 
   body{
     background: linear-gradient(180deg, var(--ink-night) 0%, var(--plum-deep) 45%, var(--plum) 100%);
@@ -445,7 +445,7 @@
   }
 
   // Attempt to play automatically after 2 seconds
-  setTimeout(tryAutoPlay, 2000);
+  setTimeout(tryAutoPlay, 3000);
 
   // Fallback: most browsers require a first interaction before audio
   // with sound can play. Catch the very first scroll / touch / click
@@ -470,6 +470,43 @@
       music.pause();
     }
   });
+
+  // ---------- Very slow, smooth auto-scroll ----------
+  let autoScrollActive = true;
+  let autoScrollStarted = false;
+  let lastTimestamp = null;
+  const SCROLL_SPEED = 14; // pixels per second — gentle and slow
+
+  function autoScrollStep(timestamp){
+    if(!autoScrollActive) return;
+    if(lastTimestamp === null) lastTimestamp = timestamp;
+    const deltaSeconds = (timestamp - lastTimestamp) / 1000;
+    lastTimestamp = timestamp;
+
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    if(window.scrollY < maxScroll - 1){
+      window.scrollBy(0, SCROLL_SPEED * deltaSeconds);
+      requestAnimationFrame(autoScrollStep);
+    } else {
+      autoScrollActive = false;
+    }
+  }
+
+  // Cancel auto-scroll the moment she takes control herself, so it never
+  // fights her finger or her mouse wheel.
+  function stopAutoScroll(){
+    autoScrollActive = false;
+  }
+  ['wheel', 'touchmove', 'touchstart', 'keydown', 'pointerdown'].forEach(evt => {
+    window.addEventListener(evt, stopAutoScroll, { once: true, passive: true });
+  });
+
+  setTimeout(() => {
+    if(!autoScrollStarted){
+      autoScrollStarted = true;
+      requestAnimationFrame(autoScrollStep);
+    }
+  }, 3000);
 </script>
 
 </body>
