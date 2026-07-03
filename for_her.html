@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Parisienne&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-night: #120c26;
+    --plum: #2a1533;
+    --plum-deep: #1a0f22;
+    --gold: #e0b56c;
+    --gold-soft: #f2d9a8;
+    --blush: #e8aac3;
+    --cream: #f7ecdd;
+    --firefly: #ffdd94;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background: linear-gradient(180deg, var(--ink-night) 0%, var(--plum-deep) 45%, var(--plum) 100%);
+    color: var(--cream);
+    font-family: 'EB Garamond', serif;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- Firefly field ---------- */
+  #firefly-layer{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:2;
+  }
+  .firefly{
+    position:absolute;
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background: var(--firefly);
+    box-shadow: 0 0 8px 3px rgba(255,221,148,0.7), 0 0 20px 8px rgba(255,221,148,0.25);
+    opacity:0;
+    animation: drift 14s ease-in-out infinite, glow 3.2s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%   { transform: translate(0,0); opacity:0; }
+    10%  { opacity:1; }
+    50%  { transform: translate(var(--dx,40px), var(--dy,-120px)); }
+    90%  { opacity:1; }
+    100% { transform: translate(var(--dx2,-30px), var(--dy2,-260px)); opacity:0; }
+  }
+  @keyframes glow{
+    0%,100% { filter:brightness(0.7); }
+    50%     { filter:brightness(1.6); }
+  }
+
+  section{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 8vh 6vw;
+    z-index:3;
+  }
+
+  .eyebrow{
+    font-family:'EB Garamond', serif;
+    letter-spacing: 0.35em;
+    text-transform:uppercase;
+    font-size: 0.72rem;
+    color: var(--blush);
+    opacity:0.85;
+    margin-bottom: 1.6rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  h1, h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight:500;
+    line-height:1.15;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  h1{
+    font-size: clamp(2.1rem, 5.2vw, 4.2rem);
+    max-width: 24ch;
+    color: var(--gold-soft);
+    text-shadow: 0 0 30px rgba(224,181,108,0.25);
+  }
+
+  h2{
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    max-width: 20ch;
+    color: var(--cream);
+    margin-bottom: 1.6rem;
+  }
+
+  .script{
+    font-family:'Parisienne', cursive;
+    color: var(--blush);
+  }
+
+  p{
+    font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+    line-height:1.85;
+    max-width: 46ch;
+    color: rgba(247,236,221,0.88);
+    font-weight:400;
+  }
+
+  p + p{ margin-top: 1.1rem; }
+
+  .divider{
+    width:1px;
+    height:70px;
+    background: linear-gradient(180deg, transparent, var(--gold), transparent);
+    margin: 2.6rem 0;
+    opacity:0.7;
+  }
+
+  /* ---------- Hero ---------- */
+  #hero .name{
+    font-family:'Parisienne', cursive;
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    color: var(--gold);
+    margin-top: 0.6rem;
+    text-shadow: 0 0 40px rgba(224,181,108,0.35);
+    text-align: center;
+    width: 100%;
+  }
+
+  .scroll-cue{
+    position:absolute;
+    bottom: 6vh;
+    font-size:0.75rem;
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    color: rgba(247,236,221,0.55);
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{ transform: translateY(0); }
+    50%{ transform: translateY(8px); }
+  }
+
+  /* ---------- Confession note ---------- */
+  .note-card{
+    background: rgba(247,236,221,0.04);
+    border: 1px solid rgba(224,181,108,0.25);
+    border-radius: 2px;
+    padding: 3rem clamp(1.6rem, 5vw, 3.4rem);
+    max-width: 640px;
+    backdrop-filter: blur(2px);
+  }
+
+  /* ---------- Whispered reasons ---------- */
+  .reasons{
+    display:flex;
+    flex-direction:column;
+    gap: 2rem;
+    max-width: 620px;
+    width:100%;
+  }
+  .reason{
+    text-align:left;
+    padding-left: 1.6rem;
+    border-left: 1px solid rgba(224,181,108,0.4);
+    position:relative;
+  }
+  .reason::before{
+    content:'';
+    position:absolute;
+    left:-4px;
+    top: 0.45rem;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background: var(--firefly);
+    box-shadow: 0 0 8px 2px rgba(255,221,148,0.6);
+  }
+  .reason p{ margin:0; }
+
+  /* ---------- Closing / letter ---------- */
+  #closing .letter{
+    max-width: 560px;
+  }
+  .signoff{
+    font-family:'Parisienne', cursive;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--gold);
+    margin-top: 2.2rem;
+    text-align: center;
+    width: 100%;
+  }
+
+  /* ---------- Music control ---------- */
+  #music-toggle{
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 10;
+    background: rgba(20,12,38,0.65);
+    border: 1px solid rgba(224,181,108,0.4);
+    color: var(--gold-soft);
+    font-family:'EB Garamond', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    padding: 0.7rem 1.2rem;
+    border-radius: 999px;
+    cursor:pointer;
+    backdrop-filter: blur(6px);
+    transition: all 0.3s ease;
+    display:flex;
+    align-items:center;
+    gap: 0.55rem;
+  }
+  #music-toggle:hover{
+    background: rgba(224,181,108,0.15);
+    border-color: var(--gold);
+  }
+  #music-toggle .dot{
+    width:7px;height:7px;border-radius:50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px 2px rgba(224,181,108,0.6);
+  }
+  #music-toggle.playing .dot{ animation: glow 1.4s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce){
+    .firefly, .scroll-cue{ animation: none !important; }
+  }
+
+  /* ---------- Mobile responsiveness ---------- */
+  @media (max-width: 640px){
+    section{
+      min-height: 100svh;
+      padding: 6vh 6vw;
+    }
+
+    h1{
+      font-size: clamp(2rem, 9vw, 2.8rem);
+      max-width: 14ch;
+    }
+
+    #hero .name{
+      font-size: clamp(2.2rem, 12vw, 3.2rem);
+    }
+
+    h2{
+      font-size: clamp(1.5rem, 6.5vw, 2rem);
+      max-width: 22ch;
+      word-break: break-word;
+    }
+
+    .soft-break{ display: none; }
+
+    p{
+      font-size: 1rem;
+      line-height: 1.75;
+      max-width: 34ch;
+    }
+
+    .note-card{
+      padding: 2.2rem 1.4rem;
+      max-width: 92vw;
+    }
+
+    .reasons{
+      max-width: 90vw;
+      gap: 1.5rem;
+    }
+
+    .reason{
+      padding-left: 1.2rem;
+    }
+
+    .signoff{
+      font-size: 1.9rem;
+      margin-top: 1.6rem;
+    }
+
+    .eyebrow{
+      font-size: 0.62rem;
+      letter-spacing: 0.28em;
+      margin-bottom: 1.2rem;
+    }
+
+    .divider{
+      height: 50px;
+      margin: 1.8rem 0;
+    }
+
+    #music-toggle{
+      bottom: 18px;
+      right: 18px;
+      padding: 0.6rem 1rem;
+      font-size: 0.78rem;
+    }
+
+    .scroll-cue{
+      bottom: 4vh;
+      font-size: 0.68rem;
+    }
+  }
+
+  @media (max-width: 380px){
+    h1{ font-size: 1.8rem; }
+    h2{ font-size: 1.35rem; }
+    #hero .name{ font-size: 2rem; }
+    h1{ white-space: normal; }
+  }
+
+  ::selection{ background: var(--gold); color: var(--ink-night); }
+</style>
+</head>
+<body>
+
+<div id="firefly-layer"></div>
+
+<button id="music-toggle" aria-label="Toggle background music">
+  <span class="dot"></span>
+  <span id="music-label">Play our song</span>
+</button>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="eyebrow">a small, overdue confession</div>
+  <h1>For the girl I never<br>get tired of</h1>
+  <div class="name">Jasutta</div>
+  <div class="scroll-cue">scroll, love ↓</div>
+</section>
+
+<!-- CONFESSION -->
+<section id="confession">
+  <div class="note-card">
+    <div class="eyebrow">an apology</div>
+    <h2>Sorry for not bringing<br>you flowers.</h2>
+    <p>Not because I forgot how I feel. I never do. I got so excited just to see you and to hear your voice that everything else, including the flowers I wished to carry for you, slipped right past me that day.</p>
+    <p>I wish every flower I meant to bring you that day could still find its way to you, carried by all my love for you, my wife.</p>
+  </div>
+</section>
+
+<!-- REASONS -->
+<section id="reasons">
+  <div class="eyebrow">things I think and don't always say</div>
+  <h2>You are, quietly, always,<br><span class="script">the best part of my life</span></h2>
+  <div class="divider"></div>
+  <div class="reasons">
+    <div class="reason">
+      <p>I do not draw everyone I see. But the moment I saw you, something made me want to draw you so badly that I could not even explain it to myself. I am afraid that what artists call the Artists Curse might happen to you.</p>
+    </div>
+    <div class="reason">
+      <p>My heart yearned for you so much after sixteen hours of travel that I could not spend one more moment without you. I rushed straight to you. I am sorry that I did not bring the flowers I had wished to bring.</p>
+    </div>
+    <div class="reason">
+      <p>Every second of every day I am thinking about you. Wherever I go, if I see a flower, the first thing that comes to my mind is your face. I have bought so many flower plants just to remember you.</p>
+    </div>
+    <div class="reason">
+      <p>I will forget many things, but never the things you like and love. I am sorry if I ever made you feel like I forget the little things about you.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section id="closing">
+  <div class="letter">
+    <div class="eyebrow">so, for the record</div>
+    <h2>You are always special to me. <br class="soft-break">I will never get tired of you.</h2>
+    <p>Even on the days I show it badly, even when excitement gets ahead of the words — this is the constant underneath all of it.</p>
+    <div class="signoff">always yours, sulu</div>
+  </div>
+</section>
+
+<script>
+  // ---------- Fireflies ----------
+  const layer = document.getElementById('firefly-layer');
+  const FIREFLY_COUNT = 26;
+  for(let i=0;i<FIREFLY_COUNT;i++){
+    const f = document.createElement('div');
+    f.className = 'firefly';
+    const startX = Math.random()*100;
+    const startY = 60 + Math.random()*40;
+    f.style.left = startX + 'vw';
+    f.style.top = startY + 'vh';
+    f.style.setProperty('--dx', (Math.random()*80-40)+'px');
+    f.style.setProperty('--dy', (-80-Math.random()*160)+'px');
+    f.style.setProperty('--dx2', (Math.random()*100-50)+'px');
+    f.style.setProperty('--dy2', (-220-Math.random()*220)+'px');
+    f.style.animationDelay = (Math.random()*14)+'s, '+(Math.random()*3)+'s';
+    f.style.animationDuration = (10+Math.random()*10)+'s, '+(2.4+Math.random()*2)+'s';
+    layer.appendChild(f);
+  }
+
+  // ---------- Ambient generative music (Web Audio API, no external files) ----------
+  let ctx, masterGain, padGain, isPlaying = false, chimeTimer;
+  const btn = document.getElementById('music-toggle');
+  const label = document.getElementById('music-label');
+
+  function initAudio(){
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 0.0;
+    masterGain.connect(ctx.destination);
+
+    // Soft evolving pad: three detuned oscillators through a slow filter sweep
+    padGain = ctx.createGain();
+    padGain.gain.value = 0.35;
+    padGain.connect(masterGain);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+    filter.Q.value = 0.6;
+    filter.connect(padGain);
+
+    const notes = [130.81, 164.81, 196.00]; // C3, E3, G3 - warm major triad
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.05 + i*0.02;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 3;
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+      lfo.start();
+      osc.connect(filter);
+      osc.start();
+    });
+
+    // slow filter sweep for movement
+    const sweep = () => {
+      const now = ctx.currentTime;
+      filter.frequency.cancelScheduledValues(now);
+      filter.frequency.setValueCurveAtTime(
+        [600, 1100, 700, 900, 600],
+        now, 16
+      );
+    };
+    sweep();
+    setInterval(sweep, 16000);
+
+    // Occasional soft bell chime
+    function chime(){
+      const now = ctx.currentTime;
+      const freqs = [523.25, 659.25, 783.99, 987.77];
+      const freq = freqs[Math.floor(Math.random()*freqs.length)];
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.15, now + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 4);
+      chimeTimer = setTimeout(chime, 4000 + Math.random()*5000);
+    }
+    chime();
+  }
+
+  btn.addEventListener('click', async () => {
+    if(!ctx){ initAudio(); }
+    if(ctx.state === 'suspended'){ await ctx.resume(); }
+
+    if(!isPlaying){
+      masterGain.gain.cancelScheduledValues(ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.2);
+      label.textContent = 'Pause our song';
+      btn.classList.add('playing');
+      isPlaying = true;
+    } else {
+      masterGain.gain.cancelScheduledValues(ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.8);
+      label.textContent = 'Play our song';
+      btn.classList.remove('playing');
+      isPlaying = false;
+    }
+  });
+</script>
+
+</body>
+</html>
