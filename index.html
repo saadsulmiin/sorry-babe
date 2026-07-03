@@ -328,6 +328,14 @@
 
 <div id="firefly-layer"></div>
 
+<!--
+  ADD YOUR SONG HERE:
+  1. Put your mp3 file in the SAME FOLDER as this html file.
+  2. Rename your song file to: your-song.mp3
+     (or change the src below to match your file's exact name)
+-->
+<audio id="bg-music" src="your-song.mp3" loop preload="auto"></audio>
+
 <button id="music-toggle" aria-label="Toggle background music">
   <span class="dot"></span>
   <span id="music-label">Play our song</span>
@@ -402,93 +410,52 @@
     layer.appendChild(f);
   }
 
-  // ---------- Ambient generative music (Web Audio API, no external files) ----------
-  let ctx, masterGain, padGain, isPlaying = false, chimeTimer;
+  // ---------- Background music (your local song file) ----------
+  const music = document.getElementById('bg-music');
   const btn = document.getElementById('music-toggle');
   const label = document.getElementById('music-label');
+  music.volume = 0.5;
+  let isPlaying = false;
+  let userToggled = false;
 
-  function initAudio(){
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = ctx.createGain();
-    masterGain.gain.value = 0.0;
-    masterGain.connect(ctx.destination);
-
-    // Soft evolving pad: three detuned oscillators through a slow filter sweep
-    padGain = ctx.createGain();
-    padGain.gain.value = 0.35;
-    padGain.connect(masterGain);
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 800;
-    filter.Q.value = 0.6;
-    filter.connect(padGain);
-
-    const notes = [130.81, 164.81, 196.00]; // C3, E3, G3 - warm major triad
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 0.05 + i*0.02;
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.value = 3;
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
-      lfo.start();
-      osc.connect(filter);
-      osc.start();
-    });
-
-    // slow filter sweep for movement
-    const sweep = () => {
-      const now = ctx.currentTime;
-      filter.frequency.cancelScheduledValues(now);
-      filter.frequency.setValueCurveAtTime(
-        [600, 1100, 700, 900, 600],
-        now, 16
-      );
-    };
-    sweep();
-    setInterval(sweep, 16000);
-
-    // Occasional soft bell chime
-    function chime(){
-      const now = ctx.currentTime;
-      const freqs = [523.25, 659.25, 783.99, 987.77];
-      const freq = freqs[Math.floor(Math.random()*freqs.length)];
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0, now);
-      g.gain.linearRampToValueAtTime(0.15, now + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
-      osc.connect(g);
-      g.connect(masterGain);
-      osc.start(now);
-      osc.stop(now + 4);
-      chimeTimer = setTimeout(chime, 4000 + Math.random()*5000);
-    }
-    chime();
+  function setPlayingUI(playing){
+    isPlaying = playing;
+    label.textContent = playing ? 'Pause our song' : 'Play our song';
+    btn.classList.toggle('playing', playing);
   }
 
-  btn.addEventListener('click', async () => {
-    if(!ctx){ initAudio(); }
-    if(ctx.state === 'suspended'){ await ctx.resume(); }
+  function tryAutoPlay(){
+    if(isPlaying || userToggled) return;
+    const playPromise = music.play();
+    if(playPromise !== undefined){
+      playPromise.then(() => {
+        setPlayingUI(true);
+      }).catch(() => {
+        // Browser blocked autoplay with sound — will retry on first
+        // scroll, touch, or click below, which counts as user interaction.
+      });
+    }
+  }
 
-    if(!isPlaying){
-      masterGain.gain.cancelScheduledValues(ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.2);
-      label.textContent = 'Pause our song';
-      btn.classList.add('playing');
-      isPlaying = true;
+  // Attempt to play automatically after 2 seconds
+  setTimeout(tryAutoPlay, 2000);
+
+  // Fallback: most browsers require a first interaction before audio
+  // with sound can play. Catch the very first scroll / touch / click
+  // and use it to start the song if it hasn't started yet.
+  ['scroll', 'touchstart', 'click', 'keydown'].forEach(evt => {
+    window.addEventListener(evt, tryAutoPlay, { once: true, passive: true });
+  });
+
+  music.addEventListener('play', () => setPlayingUI(true));
+  music.addEventListener('pause', () => setPlayingUI(false));
+
+  btn.addEventListener('click', () => {
+    userToggled = true;
+    if(music.paused){
+      music.play().catch(() => {});
     } else {
-      masterGain.gain.cancelScheduledValues(ctx.currentTime);
-      masterGain.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.8);
-      label.textContent = 'Play our song';
-      btn.classList.remove('playing');
-      isPlaying = false;
+      music.pause();
     }
   });
 </script>
